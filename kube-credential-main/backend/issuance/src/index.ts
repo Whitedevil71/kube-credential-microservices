@@ -15,6 +15,7 @@ const PORT = process.env.PORT || 3001;
 // CORS: allow Vercel frontend and local dev
 const allowedOrigins = [
   process.env.FRONTEND_ORIGIN,
+  'https://kube-credential-microservices-qatuautvq.vercel.app', // deployed Vercel frontend
   'https://kube-credential-microservices.vercel.app',
   'https://kube-credential-4255.onrender.com',
   'https://kube-credential-verification-backend.onrender.com',
