@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6
+    container_name: mongodb
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=kube-credential
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - kube-credential-network
+  issuance-service:
+    build:
+      context: ./backend/issuance
+      dockerfile: Dockerfile
+    container_name: issuance-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - MONGODB_URI=${MONGODB_URI}
+      - WORKER_ID=worker-issuance-1
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - kube-credential-network
+    depends_on:
+      - mongodb
+
+  verification-service:
+    build:
+      context: ./backend/verification
+      dockerfile: Dockerfile
+    container_name: verification-service
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - MONGODB_URI=${MONGODB_URI}
+      - WORKER_ID=worker-verification-1
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - kube-credential-network
+    depends_on:
+      - mongodb
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "80:80"
+    environment:
+      - VITE_ISSUANCE_API_URL=http://localhost:3001/api
+      - VITE_VERIFICATION_API_URL=http://localhost:3002/api
+    depends_on:
+      - issuance-service
+      - verification-service
+    restart: unless-stopped
+    networks:
+      - kube-credential-network
+
+networks:
+  kube-credential-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
